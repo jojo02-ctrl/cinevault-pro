@@ -122,7 +122,4 @@ app.post("/review", async (req, res) => {
     }
 });
 
-// --- 5. START SERVER ---
-app.listen(PORT, () => {
-    console.log(`🚀 CineVault Auth Server running on http://localhost:${PORT}`);
-});
+module.exports = app;
