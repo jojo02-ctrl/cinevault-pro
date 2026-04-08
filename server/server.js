@@ -11,7 +11,13 @@ const PORT = 3000;
 const JWT_SECRET = "cinevault_super_secret_key_999";
 
 app.use(express.json());
-app.use(express.static("public"));
+const path = require("path");
+app.use(express.static(path.join(__dirname, "public")));
+
+// Tell the server exactly what to load when someone visits your link!
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // --- 1. CONNECT TO MONGODB ATLAS ---
 const dbURI = process.env.MONGODB_URI;

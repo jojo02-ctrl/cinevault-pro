@@ -7,9 +7,10 @@
     }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "server.js"
-    }
+    { "src": "/register", "dest": "/server.js" },
+    { "src": "/login", "dest": "/server.js" },
+    { "src": "/book", "dest": "/server.js" },
+    { "src": "/review", "dest": "/server.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
