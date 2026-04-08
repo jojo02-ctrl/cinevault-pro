@@ -5,22 +5,17 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-const PORT = 3000;
 
 // This is the secret key used to stamp our VIP passes (Keep this safe!)
 const JWT_SECRET = "cinevault_super_secret_key_999";
 
+// Allows Express to read JSON data from the frontend
 app.use(express.json());
-const path = require("path");
-app.use(express.static(path.join(__dirname, "public")));
-
-// Tell the server exactly what to load when someone visits your link!
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 // --- 1. CONNECT TO MONGODB ATLAS ---
+// This safely pulls your password from the hidden Vercel Environment Variables
 const dbURI = process.env.MONGODB_URI;
+
 mongoose.connect(dbURI)
     .then(() => console.log("✅ Successfully connected to MongoDB Atlas!"))
     .catch(err => console.log("❌ MongoDB Connection Error:", err));
@@ -36,9 +31,9 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema, "users_24bai1193");
 
-// Booking Blueprint (Now linked to a username!)
+// Booking Blueprint
 const bookingSchema = new mongoose.Schema({
-    username: String, // Tracks WHO booked it
+    username: String, 
     movieId: Number,
     seats: String,
     showTime: String,
@@ -49,7 +44,7 @@ const Booking = mongoose.model("Booking", bookingSchema, "bookings_24bai1193");
 
 // Review Blueprint
 const reviewSchema = new mongoose.Schema({
-    username: String, // Tracks WHO reviewed it
+    username: String, 
     movieId: Number,
     review: String,
     rating: String,
@@ -128,4 +123,6 @@ app.post("/review", async (req, res) => {
     }
 });
 
+// --- 5. EXPORT FOR VERCEL ---
+// Vercel handles the server booting automatically, so we export the app instead of using app.listen()
 module.exports = app;
