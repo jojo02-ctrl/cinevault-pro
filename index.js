@@ -3,17 +3,22 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const path = require("path"); // Needed for Vercel folder routing
 
 const app = express();
-
-// This is the secret key used to stamp our VIP passes (Keep this safe!)
 const JWT_SECRET = "cinevault_super_secret_key_999";
 
-// Allows Express to read JSON data from the frontend
 app.use(express.json());
 
-// --- 1. CONNECT TO MONGODB ATLAS ---
-// This safely pulls your password from the hidden Vercel Environment Variables
+// --- THE VERCEL FIX: BULLETPROOF PATHING ---
+app.use(express.static(path.join(process.cwd(), "public")));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "public", "index.html"));
+});
+// ------------------------------------------
+
+// --- CONNECT TO MONGODB ---
 const dbURI = process.env.MONGODB_URI;
 
 mongoose.connect(dbURI)
@@ -21,9 +26,7 @@ mongoose.connect(dbURI)
     .catch(err => console.log("❌ MongoDB Connection Error:", err));
 
 
-// --- 2. DEFINE DATABASE BLUEPRINTS (SCHEMAS) ---
-
-// User Account Blueprint
+// --- DEFINE DATABASE SCHEMAS ---
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -31,7 +34,6 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema, "users_24bai1193");
 
-// Booking Blueprint
 const bookingSchema = new mongoose.Schema({
     username: String, 
     movieId: Number,
@@ -42,7 +44,6 @@ const bookingSchema = new mongoose.Schema({
 });
 const Booking = mongoose.model("Booking", bookingSchema, "bookings_24bai1193");
 
-// Review Blueprint
 const reviewSchema = new mongoose.Schema({
     username: String, 
     movieId: Number,
@@ -55,21 +56,16 @@ const reviewSchema = new mongoose.Schema({
 const Review = mongoose.model("Review", reviewSchema, "reviews_24bai1193");
 
 
-// --- 3. AUTHENTICATION ROUTES ---
-
-// Register a New User
+// --- AUTHENTICATION ROUTES ---
 app.post("/register", async (req, res) => {
     const { username, password } = req.body;
     try {
-        // 1. Check if user already exists
         const existingUser = await User.findOne({ username });
         if (existingUser) return res.status(400).json({ error: "Username already taken!" });
 
-        // 2. Scramble the password securely
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Save to database
         const newUser = new User({ username, password: hashedPassword });
         await newUser.save();
         
@@ -79,19 +75,15 @@ app.post("/register", async (req, res) => {
     }
 });
 
-// Login an Existing User
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
     try {
-        // 1. Find the user
         const user = await User.findOne({ username });
         if (!user) return res.status(400).json({ error: "User not found!" });
 
-        // 2. Compare passwords
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Invalid password!" });
 
-        // 3. Create VIP Token
         const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "2h" });
         
         res.json({ message: "Login successful!", token, username: user.username });
@@ -100,9 +92,7 @@ app.post("/login", async (req, res) => {
     }
 });
 
-
-// --- 4. DATA ROUTES ---
-
+// --- DATA ROUTES ---
 app.post("/book", async (req, res) => {
     try {
         const newBooking = new Booking(req.body);
@@ -123,6 +113,5 @@ app.post("/review", async (req, res) => {
     }
 });
 
-// --- 5. EXPORT FOR VERCEL ---
-// Vercel handles the server booting automatically, so we export the app instead of using app.listen()
+// --- EXPORT FOR VERCEL ---
 module.exports = app;
